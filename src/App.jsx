@@ -1,33 +1,35 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useDebounce } from "@uidotdev/usehooks";
 import PropTypes from "prop-types";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import "./App.css";
 
-const ResultItem = ({ ticker, name, market = "NYSE" }) => (
-  <div className="flex items-center justify-between text-xs p-2 hover:bg-gray-50 transition-colors cursor-pointer">
-    <div className="flex items-center gap-4">
-      <span className="text-blue-500 font-medium underline">{ticker}</span>
-      <span className="text-gray-900 line-clamp-1">{name}</span>
+const ResultItem = ({ symbol, name, market = "NYSE" }) => (
+  <div className="flex flex-row text-xs p-2 hover:bg-gray-50 transition-colors cursor-pointer">
+    <div className="flex-none w-12 text-blue-500 font-medium underline">
+      {/* data is compromised to trim for sanity sake */}
+      {String(symbol).replace(/-/, "").substring(0, 4)}
     </div>
-    <span className="text-gray-600">{market}</span>
+    <div className="flex-1 text-gray-900">
+      <span className="line-clamp-1">{name}</span>
+    </div>
+    <div className="flex-none w-10 text-gray-600 text-right">{market}</div>
   </div>
 );
 ResultItem.propTypes = {
-  ticker: PropTypes.string,
+  symbol: PropTypes.string,
   name: PropTypes.string,
   market: PropTypes.string,
 };
 
-const fnFilter = (data) => (data?.ticker ? true : false);
+const fnFilter = (data) => (data?.symbol ? true : false);
 
 const useSearch = (q = "") => {
-  let url = `https://api.marketterminal.com/v1/ticker/findAllTickers?query=${q}`;
-
+  let url = `https://ticker-2e1ica8b9.now.sh/keyword/${q}`;
   return useQuery({
     enabled: q.length > 1,
-    staleTime: 10000,
+    staleTime: 10000, // 10 second cache time for demo purposes
     queryKey: [q],
     queryFn: () => fetch(url).then((res) => res.json()),
     placeholderData: keepPreviousData,
@@ -38,16 +40,15 @@ function App() {
   const [search, setSearch] = useState("");
   const debouncedSearchTerm = useDebounce(search, 300);
   const { error, data, isFetching } = useSearch(debouncedSearchTerm);
-  const handleChange = (event) => {
-    // useCallback
+  const handleChange = useCallback((event) => {
     setSearch(event.target.value);
-  };
+  }, []);
   if (error) return "An error has occurred: " + error.message;
 
   return (
     <header className="flex justify-end">
       <div className="w-96 py-1 mr-6 mt-6">
-        <div className="relative bg-[rgb(213,213,213)]/50 border-[#a5a5a5] border rounded-md p-3 pr-8 shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
+        <div className="relative bg-[rgb(213,213,213)]/50 border-[#a5a5a5] border rounded-md p-3 shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
           <div className="relative">
             <div className="absolute mt-2 ml-2">
               <svg width="10" height="11" viewBox="0 0 10 11" fill="none">
@@ -61,7 +62,7 @@ function App() {
             </div>
             <input
               type="search"
-              className="flex h-6 w-full rounded-md border-[#a5a5a5] border border-input bg-background pl-6 pr-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground outline-none md:text-sm"
+              className="flex h-6 w-[330px] rounded-md border-[#a5a5a5] border border-input bg-background pl-6 pr-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground outline-none md:text-sm"
               placeholder="Search Ticker"
               onChange={handleChange}
               value={search}
@@ -107,16 +108,14 @@ function App() {
                     Recent Tickers
                   </h2>
                   <div className="bg-white max-h-[166px] overflow-scroll rounded-lg divide-y border border-gray-100">
-                    {data
-                      .filter(fnFilter)
-                      .map(({ _id, ticker, name, market }) => (
-                        <ResultItem
-                          key={`recent-${_id}`}
-                          ticker={ticker}
-                          market={market}
-                          name={name}
-                        />
-                      ))}
+                    {data.filter(fnFilter).map(({ symbol, name, market }) => (
+                      <ResultItem
+                        key={`recent-${name}`}
+                        symbol={symbol}
+                        market={market}
+                        name={name}
+                      />
+                    ))}
                   </div>
                 </div>
               )}
@@ -129,16 +128,14 @@ function App() {
                     Popular Tickers
                   </h2>
                   <div className="bg-white max-h-[166px] overflow-scroll rounded-lg divide-y border border-gray-100">
-                    {data
-                      .filter(fnFilter)
-                      .map(({ _id, ticker, market, name }) => (
-                        <ResultItem
-                          key={`popular-${_id}`}
-                          ticker={ticker}
-                          market={market}
-                          name={name}
-                        />
-                      ))}
+                    {data.filter(fnFilter).map(({ symbol, market, name }) => (
+                      <ResultItem
+                        key={`popular-${name}`}
+                        symbol={symbol}
+                        market={market}
+                        name={name}
+                      />
+                    ))}
                   </div>
                 </div>
               )}
