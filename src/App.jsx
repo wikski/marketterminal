@@ -68,7 +68,7 @@ function App() {
               value={search}
             />
             {isFetching && (
-              <div className="absolute right-10 top-1 bg-white">
+              <div className="absolute right-11 top-1 bg-white">
                 <Loader2 className="h-4 w-4 animate-spin" />
               </div>
             )}
