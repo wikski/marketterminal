@@ -5,7 +5,80 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import "./App.css";
 
-const ResultItem = ({ symbol, name, market = "NYSE" }) => (
+const initialData = [
+  {
+    ticker: "AAPL",
+    country: "USA",
+    exchange: "NASDAQ",
+    asset: "Stock",
+    name: "Apple Inc.",
+  },
+  {
+    ticker: "TSLA",
+    country: "USA",
+    exchange: "NASDAQ",
+    asset: "Stock",
+    name: "Tesla Inc.",
+  },
+  {
+    ticker: "SPY",
+    country: "USA",
+    exchange: "NYSE",
+    asset: "ETF",
+    name: "SPDR S&P 500 ETF Trust",
+  },
+  {
+    ticker: "BTC-USD",
+    country: "Global",
+    exchange: "Crypto",
+    asset: "Cryptocurrency",
+    name: "Bitcoin",
+  },
+  {
+    ticker: "GLD",
+    country: "USA",
+    exchange: "NYSE",
+    asset: "ETF",
+    name: "SPDR Gold Trust",
+  },
+  {
+    ticker: "GOOGL",
+    country: "USA",
+    exchange: "NASDAQ",
+    asset: "Stock",
+    name: "Alphabet Inc.",
+  },
+  {
+    ticker: "US10Y",
+    country: "USA",
+    exchange: "Treasury",
+    asset: "Bond",
+    name: "US 10-Year Treasury Note",
+  },
+  {
+    ticker: "WTI",
+    country: "Global",
+    exchange: "Commodities",
+    asset: "Commodity",
+    name: "West Texas Intermediate Crude Oil",
+  },
+  {
+    ticker: "EUR/USD",
+    country: "Global",
+    exchange: "Forex",
+    asset: "Currency Pair",
+    name: "Euro to US Dollar",
+  },
+  {
+    ticker: "AMZN",
+    country: "USA",
+    exchange: "NASDAQ",
+    asset: "Stock",
+    name: "Amazon.com Inc.",
+  },
+];
+
+const ResultItem = ({ symbol, name, exchange }) => (
   <div className="flex flex-row text-xs p-2 hover:bg-gray-50 transition-colors cursor-pointer">
     <div className="flex-none w-12 text-blue-500 font-medium underline">
       {/* data is compromised to trim for sanity sake */}
@@ -14,15 +87,20 @@ const ResultItem = ({ symbol, name, market = "NYSE" }) => (
     <div className="flex-1 text-gray-900">
       <span className="line-clamp-1">{name}</span>
     </div>
-    <div className="flex-none w-10 text-gray-600 text-right">{market}</div>
+    <div className="flex-none w-10 text-gray-600 text-right">{exchange}</div>
   </div>
 );
 ResultItem.propTypes = {
   symbol: PropTypes.string,
   name: PropTypes.string,
-  market: PropTypes.string,
+  exchange: PropTypes.string,
 };
 
+const fnMap = (data) => ({
+  symbol: data?.symbol || data?.ticker,
+  name: data.name,
+  exchange: data?.exchange || "NYSE",
+});
 const fnFilter = (data) => (data?.symbol ? true : false);
 
 const useSearch = (q = "") => {
@@ -38,11 +116,13 @@ const useSearch = (q = "") => {
 
 function App() {
   const [search, setSearch] = useState("");
+  const [focus, setFocus] = useState(false);
   const debouncedSearchTerm = useDebounce(search, 300);
   const { error, data, isFetching } = useSearch(debouncedSearchTerm);
   const handleChange = useCallback((event) => {
     setSearch(event.target.value);
   }, []);
+
   if (error) return "An error has occurred: " + error.message;
 
   return (
@@ -65,6 +145,8 @@ function App() {
               className="flex h-6 w-[330px] rounded-md border-[#a5a5a5] border border-input bg-background pl-6 pr-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground outline-none md:text-sm"
               placeholder="Search Ticker"
               onChange={handleChange}
+              onFocus={() => setFocus(true)}
+              onBlur={() => setFocus(false)}
               value={search}
             />
             {isFetching && (
@@ -100,45 +182,68 @@ function App() {
           </div>
           <div>
             {/* Recent Tickers Section */}
-            {debouncedSearchTerm.length > 1 &&
-              Array.isArray(data) &&
-              !!data.length && (
-                <div>
-                  <h2 className="text-xs font-medium text-gray-600 mt-3 mb-2">
-                    Recent Tickers
-                  </h2>
-                  <div className="bg-white max-h-[166px] overflow-scroll rounded-lg divide-y border border-gray-100">
-                    {data.filter(fnFilter).map(({ symbol, name, market }) => (
+            {focus && search.length < 2 && (
+              <div>
+                <h2 className="text-xs font-medium text-gray-600 mt-3 mb-2">
+                  Recent Tickers
+                </h2>
+                <div className="bg-white max-h-[166px] overflow-scroll rounded-lg divide-y border border-gray-100">
+                  {initialData
+                    .map(fnMap)
+                    .filter(fnFilter)
+                    .map(({ symbol, name, exchange }) => (
                       <ResultItem
-                        key={`recent-${name}`}
+                        key={`recent-${symbol}-${name}`}
                         symbol={symbol}
-                        market={market}
+                        exchange={exchange}
                         name={name}
                       />
                     ))}
-                  </div>
                 </div>
-              )}
+              </div>
+            )}
             {/* Popular Tickers Section */}
-            {debouncedSearchTerm.length > 1 &&
-              Array.isArray(data) &&
-              !!data.length && (
-                <div>
-                  <h2 className="text-xs font-medium text-gray-600 mt-3 mb-2">
-                    Popular Tickers
-                  </h2>
-                  <div className="bg-white max-h-[166px] overflow-scroll rounded-lg divide-y border border-gray-100">
-                    {data.filter(fnFilter).map(({ symbol, market, name }) => (
+            {focus && search.length < 2 && (
+              <div>
+                <h2 className="text-xs font-medium text-gray-600 mt-3 mb-2">
+                  Popular Tickers
+                </h2>
+                <div className="bg-white max-h-[166px] overflow-scroll rounded-lg divide-y border border-gray-100">
+                  {initialData
+                    .map(fnMap)
+                    .filter(fnFilter)
+                    .map(({ symbol, exchange, name }) => (
                       <ResultItem
-                        key={`popular-${name}`}
+                        key={`popular-${symbol}-${name}`}
                         symbol={symbol}
-                        market={market}
+                        exchange={exchange}
                         name={name}
                       />
                     ))}
-                  </div>
                 </div>
-              )}
+              </div>
+            )}
+            {/* Initial Data Section */}
+            {Array.isArray(data) && search.length > 1 && (
+              <div>
+                <h2 className="text-xs font-medium text-gray-600 mt-3 mb-2">
+                  All Tickers
+                </h2>
+                <div className="bg-white max-h-[332px] overflow-scroll rounded-lg divide-y border border-gray-100">
+                  {data
+                    .map(fnMap)
+                    .filter(fnFilter)
+                    .map(({ symbol, name, exchange }) => (
+                      <ResultItem
+                        key={`recent-${symbol}-${name}`}
+                        symbol={symbol}
+                        exchange={exchange}
+                        name={name}
+                      />
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
