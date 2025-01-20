@@ -87,7 +87,7 @@ const ResultItem = ({ symbol, name, exchange }) => (
     <div className="flex-1 text-gray-900">
       <span className="line-clamp-1">{name}</span>
     </div>
-    <div className="flex-none w-10 text-gray-600 text-right">{exchange}</div>
+    <div className="flex-none w-18 text-gray-600 text-right">{exchange}</div>
   </div>
 );
 ResultItem.propTypes = {
@@ -223,7 +223,7 @@ function App() {
                 </div>
               </div>
             )}
-            {/* Initial Data Section */}
+            {/* All Tickers Section */}
             {Array.isArray(data) && search.length > 1 && (
               <div>
                 <h2 className="text-xs font-medium text-gray-600 mt-3 mb-2">
